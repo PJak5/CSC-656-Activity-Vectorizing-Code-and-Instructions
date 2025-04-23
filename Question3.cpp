@@ -1,9 +1,8 @@
 #include <cstdio>
 
-const char* dgemv_desc = "Vectorized implementation of matrix-vector multiply.";
+const char* dgemv_desc = "Vectorized implementation of matrix-vector multiply";
 
 /*
- 
 This routine performs a dgemv operation
 Y :=  A * X + Y
 where A is n-by-n matrix stored in row-major format, and X and Y are n by 1 vectors.
@@ -15,28 +14,42 @@ On exit, A and X maintain their input values.
 void my_dgemv(int n, double* A, double* x, double* y) {
    printf("Starting dgemv with n=%d\n", n);
    
+   // For each row of A
    for(int i = 0; i < n; i++){
+      // Initialize accumulator for dot product
+      double dot_product = 0.0;
+      
+      // Calculate the starting index for this row
       const int row_idx = i * n;
       
-      __m256d sum_vec = _mm256_setzero_pd();
-      
+      // Process in chunks of 4 doubles to encourage vectorization
       int j = 0;
-      for (; j <= n - 4; j += 4) {
-         __m256d a_vec = _mm256_loadu_pd(&A[row_idx + j]);
-         __m256d x_vec = _mm256_loadu_pd(&x[j]);
+      const int chunk_size = 4;
+      
+      if (n >= chunk_size) {
+         double partial_sums[chunk_size] = {0.0};
          
-         __m256d prod = _mm256_mul_pd(a_vec, x_vec);
-         sum_vec = _mm256_add_pd(sum_vec, prod);
+         // Main vectorizable loop - process in chunks
+         for (; j <= n - chunk_size; j += chunk_size) {
+            // This loop can be auto-vectorized
+            #pragma GCC ivdep
+            for (int k = 0; k < chunk_size; k++) {
+               partial_sums[k] += A[row_idx + j + k] * x[j + k];
+            }
+         }
+         
+         // Combine partial sums
+         for (int k = 0; k < chunk_size; k++) {
+            dot_product += partial_sums[k];
+         }
       }
       
-      double temp[4];
-      _mm256_storeu_pd(temp, sum_vec);
-      double dot_product = temp[0] + temp[1] + temp[2] + temp[3];
-      
+      // Handle remaining elements
       for (; j < n; j++) {
          dot_product += A[row_idx + j] * x[j];
       }
       
+      // Update output vector
       y[i] += dot_product;
    }
    
