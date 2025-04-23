@@ -3,7 +3,6 @@
 // For educational use only.
 // 
 #include <iostream>
-#include <immintrin.h> // For AVX instructions
 
 int 
 sum_array(int N, int A[])
@@ -13,28 +12,34 @@ sum_array(int N, int A[])
    // and return that sum to the caller
 
    int sum = 0;
-    
+   
+   // Use a loop structure that's friendly to compiler auto-vectorization
+   // Process 8 elements at a time to encourage SIMD operations
+   const int chunk_size = 8;
    int i = 0;
-   if (N >= 8) {
-       __m256i sum_vec = _mm256_setzero_si256();
-        
-       for (; i <= N - 8; i += 8) {
-           __m256i v = _mm256_loadu_si256((__m256i*)&A[i]); // Load 8 integers
-           sum_vec = _mm256_add_epi32(sum_vec, v); // Add to running sum
+   
+   // Handle main loop with vectorization-friendly pattern
+   if (N >= chunk_size) {
+       int partial_sums[chunk_size] = {0};
+       
+       for (; i <= N - chunk_size; i += chunk_size) {
+           #pragma GCC ivdep
+           for (int j = 0; j < chunk_size; j++) {
+               partial_sums[j] += A[i + j];
+           }
        }
-        
-       int temp[8];
-       _mm256_storeu_si256((__m256i*)temp, sum_vec);
-       for (int j = 0; j < 8; j++) {
-           sum += temp[j];
+       
+       // Combine partial sums
+       for (int j = 0; j < chunk_size; j++) {
+           sum += partial_sums[j];
        }
    }
-    
+   
    // Handle remaining elements
    for (; i < N; i++) {
        sum += A[i];
    }
-    
+   
    return sum;
 }
 
