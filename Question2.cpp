@@ -15,32 +15,39 @@ sum_rows(int N, int A[], int y[])
    // of N rows and N columns
 
    // your job: write code that will for each row i in A, sum all the values 
-   // all N coluimns of row row A[i,*] and place the sum into y[i]
+   // all N columns of row row A[i,*] and place the sum into y[i]
 
-   for(int i = 0; i < N; i++){
-    y[i] = 0;
-    int j = 0;
-
-    if(N >= 8){
-      __m256i sum_vec = _mm256_setzero_si256();
-
-      for(; j <= N - 8; j += 8){
-        __m256i v = _mm256_loadu_si256((__m256i*)&A[i*N + j]);
-        sum_vec = _mm256_add_epi32(sum_vec, v);
+   // Process each row
+   for (int i = 0; i < N; i++) {
+      y[i] = 0; // Initialize sum for this row
+      
+      // Use a pattern that's friendly to auto-vectorization
+      const int chunk_size = 8;
+      int j = 0;
+      
+      if (N >= chunk_size) {
+         int partial_sums[chunk_size] = {0};
+         
+         // Process in chunks of 8 elements to encourage vectorization
+         for (; j <= N - chunk_size; j += chunk_size) {
+            // This loop can be auto-vectorized
+            #pragma GCC ivdep
+            for (int k = 0; k < chunk_size; k++) {
+               partial_sums[k] += A[i*N + j + k];
+            }
+         }
+         
+         // Combine partial sums
+         for (int k = 0; k < chunk_size; k++) {
+            y[i] += partial_sums[k];
+         }
       }
-
-      int temp[8];
-      _mm256_storeu_si256((__m256i*)temp, sum_vec);
-      for(int k = 0; k < 8; k++){
-        y[i] += temp[k];
+      
+      // Handle remaining elements
+      for (; j < N; j++) {
+         y[i] += A[i*N + j];
       }
-    }
    }
-
-    for (; j < N; j++) {
-      Y[i] += A[i*N + j];
-    }
-
 }
 
 int main(int ac, char*av[])
