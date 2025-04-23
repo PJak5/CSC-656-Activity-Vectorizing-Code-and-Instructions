@@ -3,6 +3,7 @@
 // For educational use only.
 // 
 #include <iostream>
+#include <immintrin.h> // For AVX instructions
 
 int 
 sum_array(int N, int A[])
@@ -11,30 +12,29 @@ sum_array(int N, int A[])
    // your job: write code to compute the sum of all values in A[]
    // and return that sum to the caller
 
-   // Put your code here, return the correct result
    int sum = 0;
-
-    int i = 0;
-
-    if(N >= 8){
-      __m256i sum_vec = _mm256_setzero_si256();
-
-      for (; i <= N - 8; i += 8) {
-        __m256i v = _mm256_loadu_si256((__m256i*)&A[i]); //Load 8 integers 
-        sum_vec = _mm256_add_epi32(sum_vec, v); //Add to running sum
-      }
-
-      int temp[8];
-      _mm256_storeu_si256((__m256i*)temp, sum_vec);
-      for (int j = 0; j < 8; j++) {
-        sum += temp[j];
-      }
-    }
-
-    for (; i < N; i++) {
+    
+   int i = 0;
+   if (N >= 8) {
+       __m256i sum_vec = _mm256_setzero_si256();
+        
+       for (; i <= N - 8; i += 8) {
+           __m256i v = _mm256_loadu_si256((__m256i*)&A[i]); // Load 8 integers
+           sum_vec = _mm256_add_epi32(sum_vec, v); // Add to running sum
+       }
+        
+       int temp[8];
+       _mm256_storeu_si256((__m256i*)temp, sum_vec);
+       for (int j = 0; j < 8; j++) {
+           sum += temp[j];
+       }
+   }
+    
+   // Handle remaining elements
+   for (; i < N; i++) {
        sum += A[i];
-    }
-
+   }
+    
    return sum;
 }
 
