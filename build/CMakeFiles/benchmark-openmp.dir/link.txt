@@ -1,0 +1,1 @@
+/usr/bin/c++ -O0 -fopenmp CMakeFiles/benchmark-openmp.dir/dgemv-openmp.cpp.o CMakeFiles/benchmark.dir/benchmark.cpp.o -o benchmark-openmp  /usr/lib/x86_64-linux-gnu/libblas.so 

@@ -1,0 +1,1 @@
+/usr/bin/c++ -O0 CMakeFiles/benchmark-vectorized.dir/dgemv-vectorized.cpp.o CMakeFiles/benchmark.dir/benchmark.cpp.o -o benchmark-vectorized  /usr/lib/x86_64-linux-gnu/libblas.so 
